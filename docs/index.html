@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Thetis IT</title>
+
+<link rel="stylesheet" type="text/css" href="css/style.min.css">
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="js/three.js"></script>
+<script src="js/WebGL.js"></script>
+<script src="js/anime.min.js"></script>
+
+
+<script src="js/main.js"></script>
+
+
+</head>
+
+<div class="preloader">
+	
+	<div class="pre_wrap">
+		
+		<span>Thetis IT</span>
+		
+		<div class="loadbar"></div>
+
+	</div>
+	
+</div>
+
+<style type="text/css">
+
+	.preloader {
+		display: grid;
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr;
+		position: absolute;
+		top:0;
+		left:0;
+		width: 100%;
+		height: 100%;
+		background: #033e8c;
+		z-index: 10;
+		opacity: 1;
+	}
+
+	.pre_wrap {
+		place-self: center;
+		overflow: hidden;
+	}
+
+	@keyframes fadeUp {
+
+		0% {
+			top: 50px;
+		}
+
+		100% {
+			top: 0px;
+		}
+
+	}
+
+	.pre_wrap span {
+		text-transform: uppercase;
+		font-weight: bold;
+		letter-spacing: .1em;
+		position: relative;
+		animation: fadeUp 1s cubic-bezier(0.785, 0.135, 0.150, 0.860);
+	}
+
+	@keyframes loadBar {
+		0% {
+			width: 0%;
+		}
+
+		20% {
+			width: 15%;
+		}
+
+		40% {
+			width: 35%;
+		}
+
+		80% {
+			width: 75%;
+		}
+
+		100% {
+			width: 95%;
+		}
+	}
+
+	.loadbar {
+		height: 2px;
+		background: #ffffff;
+		transition-timing-function: cubic-bezier(0.785, 0.135, 0.150, 0.860);
+		animation: loadBar 2s;
+	}
+	
+</style>
+
+
+<body>
+
+	<div class="nav">
+		
+		<div class="logo">
+			
+			<img src="images/thetisit_logo_white.svg">
+
+		</div>
+
+		<div>
+			
+		</div>
+
+		<div class="menu">
+			
+			<a href="">Solutions</a>
+
+			<a href="">Stories</a>
+
+			<div class="spacer"></div>
+
+		</div>
+
+	</div>
+
+
+
+	<div class="page home">
+
+		<div class="background">
+
+			<script type="x-shader/x-vertex" id="vertexshader">
+				attribute float scale;
+				void main() {
+					vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+					gl_PointSize = scale * ( 300.0 / - mvPosition.z );
+					gl_Position = projectionMatrix * mvPosition;
+				}
+			</script>
+
+			<script type="x-shader/x-fragment" id="fragmentshader">
+				uniform vec3 color;
+				void main() {
+					if ( length( gl_PointCoord - vec2( 0.5, 0.5 ) ) > 0.475 ) discard;
+					gl_FragColor = vec4( color, 1.0 );
+				}
+			</script>
+
+			<script>
+				if ( WEBGL.isWebGLAvailable() === false ) {
+					document.body.appendChild( WEBGL.getWebGLErrorMessage() );
+				}
+				var SEPARATION = 100, AMOUNTX = 50, AMOUNTY = 50;
+				var container, stats;
+				var camera, scene, renderer;
+				var particles, count = 0;
+				var mouseX = 0, mouseY = 0;
+				var windowHalfX = window.innerWidth / 2;
+				var windowHalfY = window.innerHeight / 2;
+				init();
+				animate();
+				function init() {
+					container = document.createElement( 'div' );
+					container.className = "background";
+					document.body.appendChild( container );
+					camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+					camera.position.z = 1000;
+					scene = new THREE.Scene();
+					//
+					var numParticles = AMOUNTX * AMOUNTY;
+					var positions = new Float32Array( numParticles * 3 );
+					var scales = new Float32Array( numParticles );
+					var i = 0, j = 0;
+					for ( var ix = 0; ix < AMOUNTX; ix ++ ) {
+						for ( var iy = 0; iy < AMOUNTY; iy ++ ) {
+							positions[ i ] = ix * SEPARATION - ( ( AMOUNTX * SEPARATION ) / 2 ); // x
+							positions[ i + 1 ] = 0; // y
+							positions[ i + 2 ] = iy * SEPARATION - ( ( AMOUNTY * SEPARATION ) / 2 ); // z
+							scales[ j ] = 1;
+							i += 3;
+							j ++;
+						}
+					}
+					var geometry = new THREE.BufferGeometry();
+					geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+					geometry.addAttribute( 'scale', new THREE.BufferAttribute( scales, 1 ) );
+					var material = new THREE.ShaderMaterial( {
+						uniforms: {
+							color: { value: new THREE.Color( 0xffffff ) },
+						},
+						vertexShader: document.getElementById( 'vertexshader' ).textContent,
+						fragmentShader: document.getElementById( 'fragmentshader' ).textContent
+					} );
+					//
+					particles = new THREE.Points( geometry, material );
+					scene.add( particles );
+					//
+					renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true} );
+					renderer.setPixelRatio( window.devicePixelRatio );
+					renderer.setSize( window.innerWidth, window.innerHeight );
+					container.appendChild( renderer.domElement );
+					//stats = new Stats();
+					//container.appendChild( stats.dom );
+					document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+					document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+					document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+					//
+					window.addEventListener( 'resize', onWindowResize, false );
+				}
+				function onWindowResize() {
+					windowHalfX = window.innerWidth / 2;
+					windowHalfY = window.innerHeight / 2;
+					camera.aspect = window.innerWidth / window.innerHeight;
+					camera.updateProjectionMatrix();
+					renderer.setSize( window.innerWidth, window.innerHeight );
+				}
+				//
+				function onDocumentMouseMove( event ) {
+					mouseX = event.clientX - windowHalfX;
+					mouseY = event.clientY - windowHalfY;
+				}
+				function onDocumentTouchStart( event ) {
+					if ( event.touches.length === 1 ) {
+						event.preventDefault();
+						mouseX = event.touches[ 0 ].pageX - windowHalfX;
+						mouseY = event.touches[ 0 ].pageY - windowHalfY;
+					}
+				}
+				function onDocumentTouchMove( event ) {
+					if ( event.touches.length === 1 ) {
+						event.preventDefault();
+						mouseX = event.touches[ 0 ].pageX - windowHalfX;
+						mouseY = event.touches[ 0 ].pageY - windowHalfY;
+					}
+				}
+				//
+				function animate() {
+					requestAnimationFrame( animate );
+					render();
+					//stats.update();
+				}
+				function render() {
+					camera.position.x += ( mouseX - camera.position.x ) * .003;
+					camera.position.y += ( - mouseY - camera.position.y ) * .003;
+					camera.lookAt( scene.position );
+					var positions = particles.geometry.attributes.position.array;
+					var scales = particles.geometry.attributes.scale.array;
+					var i = 0, j = 0;
+					for ( var ix = 0; ix < AMOUNTX; ix ++ ) {
+						for ( var iy = 0; iy < AMOUNTY; iy ++ ) {
+							positions[ i + 1 ] = ( Math.sin( ( ix + count ) * 0.3 ) * 50 ) +
+											( Math.sin( ( iy + count ) * 0.5 ) * 50 );
+							scales[ j ] = ( Math.sin( ( ix + count ) * 0.3 ) + 0.3 ) * 8 +
+											( Math.sin( ( iy + count ) * 0.5 ) + 0.3 ) * 8;
+							i += 3;
+							j ++;
+						}
+					}
+					particles.geometry.attributes.position.needsUpdate = true;
+					particles.geometry.attributes.scale.needsUpdate = true;
+					renderer.render( scene, camera );
+					count += 0.05;
+				}
+			</script>	
+			
+		</div>
+		
+		<div class="home_hero text_shadow">
+			
+			<div class="hero_anim">
+
+				<svg version="1.1" id="HomeIcon" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+						 viewBox="0 0 144 137.6"  xml:space="preserve">
+					<path class="st0" stroke="rgba(255,255,255,.5)" stroke-width=".5" stroke-linecap="round" d="M46.6,137.6c-12.9-4.1-24.7-12.6-33-23.9C5.2,102.3,0.4,88.2,0,73.9c-0.1-3.6,0.1-7.2,0.6-10.8
+						C1,59.5,1.8,56,2.8,52.5c1-3.5,2.3-6.9,3.8-10.2c1.5-3.3,3.3-6.5,5.3-9.5c2-3,4.2-5.9,6.6-8.6c2.5-2.7,5.1-5.2,7.9-7.6
+						c2.8-2.3,5.8-4.4,8.9-6.3c3.1-1.8,6.4-3.5,9.8-4.9C48.4,4,51.9,2.9,55.4,2c3.5-0.9,7.2-1.4,10.8-1.8c3.6-0.3,7.3-0.3,10.9-0.1
+						c3.6,0.2,7.2,0.7,10.8,1.5c3.6,0.8,7,1.9,10.4,3.1c3.4,1.3,6.7,2.9,9.8,4.6c3.1,1.8,6.2,3.8,9,6c2.8,2.3,5.5,4.7,7.9,7.3
+						c9.8,10.5,16.2,23.9,18.2,37.9c2,13.9-0.4,28.2-6.8,40.2c1-3.3,1.8-6.5,2.4-9.8c0.5-3.3,0.9-6.6,1-9.9c0.1-3.3,0-6.6-0.3-9.8
+						c-0.4-3.2-0.9-6.5-1.7-9.6c-3.1-12.6-9.9-24-19.1-32.7c-4.6-4.3-9.8-8-15.4-10.8c-2.8-1.4-5.7-2.6-8.6-3.6c-3-1-6-1.8-9-2.4
+						c-3.1-0.5-6.1-1-9.2-1.1c-3.1-0.1-6.2,0-9.3,0.3c-3.1,0.3-6.1,0.8-9.2,1.6c-3,0.8-5.9,1.7-8.8,2.9c-2.9,1.2-5.6,2.6-8.3,4.1
+						c-2.7,1.6-5.2,3.4-7.6,5.3c-2.4,1.9-4.7,4.1-6.8,6.3c-2.1,2.3-4,4.7-5.9,7.2c-1.8,2.5-3.3,5.3-4.8,8c-1.4,2.8-2.6,5.7-3.6,8.7
+						c-1,3-1.8,6-2.3,9.1c-0.5,3.1-0.9,6.2-1,9.4c-0.5,12.6,2.7,25.5,9.3,36.7c1.6,2.8,3.5,5.5,5.5,8.1c2,2.6,4.3,5,6.7,7.3
+						c2.4,2.3,5,4.4,7.7,6.3C40.7,134.2,43.6,135.9,46.6,137.6z"/>
+					<path class="st0" stroke="rgba(255,255,255,.5)" stroke-width=".5" stroke-linecap="round" d="M94,24.5c10.3,3,19.7,9.5,26.4,18.5c6.7,8.9,10.7,20.1,11.1,31.5c0.1,2.9-0.1,5.7-0.4,8.6
+						c-0.3,2.9-1,5.7-1.7,8.5c-0.8,2.8-1.8,5.5-3,8.2c-1.2,2.6-2.6,5.2-4.2,7.6c-1.6,2.4-3.4,4.8-5.3,6.9c-2,2.2-4,4.2-6.3,6.1
+						c-2.3,1.8-4.7,3.5-7.2,5c-2.5,1.5-5.1,2.8-7.8,3.9c-2.7,1.1-5.5,2-8.3,2.7c-2.8,0.7-5.7,1.1-8.6,1.4c-2.9,0.2-5.8,0.2-8.7,0.1
+						c-2.9-0.2-5.8-0.6-8.6-1.2c-2.8-0.6-5.6-1.5-8.3-2.5c-2.7-1.1-5.3-2.3-7.8-3.7c-2.5-1.5-4.9-3.1-7.2-4.9c-2.2-1.8-4.4-3.8-6.3-5.9
+						c-7.8-8.4-12.8-19.2-14.2-30.3c-1.5-11.1,0.7-22.4,5.9-31.7c-0.7,2.6-1.3,5.1-1.7,7.7c-0.4,2.6-0.6,5.2-0.7,7.8
+						c0,2.6,0.1,5.1,0.4,7.7c0.3,2.5,0.8,5,1.5,7.4c2.6,9.7,7.9,18.5,15.1,25.1c3.6,3.3,7.6,6.1,11.9,8.2c2.2,1.1,4.4,2,6.7,2.8
+						c2.3,0.7,4.6,1.4,6.9,1.8c2.4,0.4,4.7,0.7,7.1,0.8c2.4,0.1,4.8,0,7.1-0.2c2.4-0.3,4.7-0.6,7-1.2c2.3-0.6,4.6-1.3,6.8-2.2
+						c2.2-0.9,4.3-2,6.4-3.1c2-1.2,4-2.6,5.9-4c1.9-1.5,3.6-3.1,5.3-4.8c1.6-1.7,3.1-3.6,4.5-5.5c1.4-1.9,2.6-4,3.7-6.1
+						c1.1-2.2,2-4.4,2.8-6.6c1.5-4.6,2.5-9.3,2.7-14.2c0.5-9.7-1.9-19.7-6.8-28.5c-1.2-2.2-2.7-4.3-4.2-6.3c-1.5-2-3.3-3.9-5.1-5.8
+						c-1.8-1.8-3.8-3.5-5.9-5.1C98.6,27.2,96.3,25.8,94,24.5z"/>
+
+				</svg>
+
+
+				<script type="text/javascript">
+
+
+
+				</script>
+				
+			</div>
+
+			<h1>Thetis IT</h1>
+
+			<p>We develop technological applications for the environment, climate change adaptation, urban regeneration and resilience, energy saving, mobility management, infomobility and decision support systems.</p>
+
+			
+
+		</div>   
+
+		<div class="home_link">
+
+			<div class="line"></div>
+			
+			<a class="text_shadow" href="#">Who we are</a>
+
+		</div>	
+    
+    </div>
+
+
+
+    <footer>
+	
+		<div class="left">
+
+			<a href="#">Careers</a>
+			
+		</div>
+
+
+
+		<div class="right">
+
+			<a href="#">Legal Info</a>	
+
+		</div>
+
+	</footer>
+
+</body>
+</html>
