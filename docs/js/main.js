@@ -158,7 +158,7 @@ $(document).ready(function() {
 
 
 	$('.home_link a').click(function() {
-		goto_who.play();
+		//goto_who.play();
 	});	
 
 }); 
